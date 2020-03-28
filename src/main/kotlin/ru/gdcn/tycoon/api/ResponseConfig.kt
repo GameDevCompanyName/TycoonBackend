@@ -1,9 +1,10 @@
 package ru.gdcn.tycoon.api
 
-class Response<T>(val status: ResponseStatus, val entity: T)
+class Response<T>(val status: Int, val entity: T)
 
-enum class ResponseStatus(code: Int) {
+enum class ResponseStatus(val code: Int) {
     OK(200),
     ALREADY_LOGGED(300),
-    ERROR(400)
+    ERROR(400),
+    FAILED_CREATE_PLAYER(403)
 }

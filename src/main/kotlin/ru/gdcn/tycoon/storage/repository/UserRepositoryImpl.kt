@@ -4,26 +4,19 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ru.gdcn.tycoon.storage.StorageHelper
 import ru.gdcn.tycoon.storage.entity.User
+import ru.gdcn.tycoon.storage.repository.base.BaseDataRepository
+import ru.gdcn.tycoon.storage.repository.base.IUserRepository
 
 import java.util.*
 
-class UserRepositoryImpl : BaseDataRepository<User>("User"), UserRepository {
+class UserRepositoryImpl : BaseDataRepository<User>("User"),
+    IUserRepository {
 
-    val logger: Logger by lazy { LoggerFactory.getLogger(UserRepositoryImpl::class.java) }
+    private val logger: Logger by lazy { LoggerFactory.getLogger(UserRepositoryImpl::class.java) }
 
-    override fun save(user: User): Boolean {
-        StorageHelper.sessionFactory.openSession().use {
-            try {
-                it.beginTransaction()
-                it.save(user)
-                it.transaction.commit()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return false
-            }
-        }
-        return true
-    }
+    override fun save(user: User): Long = saveEntity(user)
+
+    override fun delete(user: User) = deleteEntity(user)
 
     override fun findByName(name: String): Optional<User> {
         val selectResult = findByColumnName("username", name)

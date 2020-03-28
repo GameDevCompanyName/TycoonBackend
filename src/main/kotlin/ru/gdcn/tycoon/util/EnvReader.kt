@@ -1,10 +1,10 @@
-package ru.gdcn.tycoon
+package ru.gdcn.tycoon.util
 
 import org.json.simple.JSONObject
 import org.json.simple.parser.JSONParser
 import java.io.FileReader
 
-object JSONHelper {
+object EnvReader {
 
     private const val ENV_FILE_NAME = "environment"
 

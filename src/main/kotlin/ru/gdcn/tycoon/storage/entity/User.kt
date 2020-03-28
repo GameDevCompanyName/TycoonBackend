@@ -6,7 +6,7 @@ import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "t_user")
-class User {
+class User() {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     var id: Long = -1
@@ -17,9 +17,19 @@ class User {
     @Column(nullable = false)
     lateinit var password: String
 
+    @Column(unique = true, nullable = false)
+    lateinit var salt: String
+
     @Column(nullable = false)
     var role: Int = -1
 
     @Transient
     lateinit var passwordConfirm: String
+
+    constructor(username: String, password: String, salt: String, role: Int) : this() {
+        this.username = username
+        this.password = password
+        this.salt = salt
+        this.role = role
+    }
 }
