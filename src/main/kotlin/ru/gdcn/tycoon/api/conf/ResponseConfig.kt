@@ -1,4 +1,4 @@
-package ru.gdcn.tycoon.api
+package ru.gdcn.tycoon.api.conf
 
 class Response<T>(val status: Int, val entity: T)
 
