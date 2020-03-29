@@ -12,13 +12,12 @@ import io.ktor.routing.Routing
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.sessions.*
-import io.ktor.utils.io.core.toByteArray
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import ru.gdcn.tycoon.api.Response
-import ru.gdcn.tycoon.api.ResponseStatus
+import ru.gdcn.tycoon.api.conf.Response
+import ru.gdcn.tycoon.api.conf.ResponseStatus
 import ru.gdcn.tycoon.storage.StorageHelper
 import ru.gdcn.tycoon.storage.entity.Player
 import ru.gdcn.tycoon.storage.entity.Role
@@ -48,7 +47,12 @@ fun Application.installAuth() {
             userParamName = PARAM_NAME_LOGIN_USERNAME
             passwordParamName = PARAM_NAME_LOGIN_PASSWORD
             challenge {
-                call.respond(Response(ResponseStatus.ERROR.code, "Invalid username or password!"))
+                call.respond(
+                    Response(
+                        ResponseStatus.ERROR.code,
+                        "Invalid username or password!"
+                    )
+                )
             }
             validate { credentials ->
                 val user = StorageHelper.userRepository.findByName(credentials.name)
@@ -73,12 +77,19 @@ private fun initAuthenticateRoute(routing: Routing) {
         post("/login") {
             val principal = call.principal<UserIdPrincipal>()
             if (principal == null) {
-                call.respond(Response(ResponseStatus.ERROR.code, "Failed login!"))
+                call.respond(
+                    Response(
+                        ResponseStatus.ERROR.code,
+                        "Failed login!"
+                    )
+                )
                 return@post
             }
 
             call.sessions.set(TOKEN_NAME, SessionToken(principal.name))
-            call.respond(HttpStatusCode.OK, Response(ResponseStatus.OK.code, null))
+            call.respond(HttpStatusCode.OK,
+                Response(ResponseStatus.OK.code, null)
+            )
 
             logger.info("\'${principal.name}\' logged")
         }
@@ -95,7 +106,12 @@ private fun initRegistrationRoute(routing: Routing) {
             parameters = call.receiveParameters()
         } catch (e: Exception) {
             e.printStackTrace()
-            call.respond(Response(ResponseStatus.ERROR.code, "Can't receive parameters!"))
+            call.respond(
+                Response(
+                    ResponseStatus.ERROR.code,
+                    "Can't receive parameters!"
+                )
+            )
             return@post
         }
 
@@ -114,12 +130,22 @@ private fun initRegistrationRoute(routing: Routing) {
 
         val user = StorageHelper.userRepository.findByName(username)
         if (!user.isEmpty) {
-            call.respond(Response(ResponseStatus.ERROR.code, "User already exists!"))
+            call.respond(
+                Response(
+                    ResponseStatus.ERROR.code,
+                    "User already exists!"
+                )
+            )
             return@post
         }
 
         if (password != passwordConfirm) {
-            call.respond(Response(ResponseStatus.ERROR.code, "Passwords not equals!"))
+            call.respond(
+                Response(
+                    ResponseStatus.ERROR.code,
+                    "Passwords not equals!"
+                )
+            )
             return@post
         }
 
@@ -131,7 +157,12 @@ private fun initRegistrationRoute(routing: Routing) {
         )
         newUser.id = StorageHelper.userRepository.save(newUser)
         if (newUser.id == -1L) {
-            call.respond(Response(ResponseStatus.ERROR.code, "Failed to create a user!"))
+            call.respond(
+                Response(
+                    ResponseStatus.ERROR.code,
+                    "Failed to create a user!"
+                )
+            )
             logger.error("\'${newUser.username}\' - failed to create. Cause: ¯\\_(ツ)_/¯")
             return@post
         }
@@ -139,7 +170,12 @@ private fun initRegistrationRoute(routing: Routing) {
 
         if (!createPlayerByUser(newUser)) {
             StorageHelper.userRepository.delete(newUser)
-            call.respond(Response(ResponseStatus.FAILED_CREATE_PLAYER.code, "Failed to create a character!"))
+            call.respond(
+                Response(
+                    ResponseStatus.FAILED_CREATE_PLAYER.code,
+                    "Failed to create a character!"
+                )
+            )
             logger.error("Failed to create a character. '${newUser.username}' was delete")
             return@post
         }
