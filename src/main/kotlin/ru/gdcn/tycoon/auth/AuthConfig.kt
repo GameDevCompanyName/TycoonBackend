@@ -22,6 +22,7 @@ import ru.gdcn.tycoon.storage.StorageHelper
 import ru.gdcn.tycoon.storage.entity.Player
 import ru.gdcn.tycoon.storage.entity.Role
 import ru.gdcn.tycoon.storage.entity.User
+import ru.gdcn.tycoon.util.PassHashing
 
 import java.io.File
 
@@ -58,7 +59,12 @@ fun Application.installAuth() {
             }
             validate { credentials ->
                 val user = StorageHelper.userRepository.findByName(credentials.name)
-                if (!user.isEmpty && user.get().password == credentials.password) {
+                if (!user.isEmpty
+                    && PassHashing.equalsPassword(
+                        user.get().password,
+                        credentials.password, user.get().salt
+                    )
+                ) {
                     UserIdPrincipal(credentials.name)
                 } else {
                     null
@@ -89,9 +95,7 @@ private fun initAuthenticateRoute(routing: Routing) {
             }
 
             call.sessions.set(TOKEN_NAME, SessionToken(principal.name))
-            call.respond(HttpStatusCode.OK,
-                Response(ResponseStatus.OK.code, null)
-            )
+            call.respond(Response(ResponseStatus.OK.code, "User logged"))
 
             logger.info("\'${principal.name}\' logged")
         }
@@ -151,10 +155,21 @@ private fun initRegistrationRoute(routing: Routing) {
             return@post
         }
 
+        val pair = PassHashing.hashPassword(password)
+        if (pair.isEmpty) {
+            call.respond(
+                Response(
+                    ResponseStatus.ERROR.code,
+                    "Failed to create a user!"
+                )
+            )
+            return@post
+        }
+
         val newUser = User(
             username = username,
-            password = password,
-            salt = "salt",
+            password = pair.get().first,
+            salt = pair.get().second,
             role = Role.USER.id
         )
         newUser.id = StorageHelper.userRepository.save(newUser)
@@ -168,7 +183,6 @@ private fun initRegistrationRoute(routing: Routing) {
             logger.error("\'${newUser.username}\' - failed to create. Cause: ¯\\_(ツ)_/¯")
             return@post
         }
-        logger.debug("\'$username\' password - ${newUser.password} and salt - ${newUser.salt}")
 
         if (!createPlayerByUser(newUser)) {
             StorageHelper.userRepository.delete(newUser)
@@ -183,7 +197,7 @@ private fun initRegistrationRoute(routing: Routing) {
         }
 
         call.sessions.set(SessionToken(newUser.username))
-        call.respond(Response(ResponseStatus.OK.code, null))
+        call.respond(Response(ResponseStatus.OK.code, "User registered"))
 
         logger.info("\'${newUser.username}\' was registered!")
     }

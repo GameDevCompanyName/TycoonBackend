@@ -16,7 +16,7 @@ open class BaseDataRepository<T>(private val entityName: String) {
                 it.transaction.commit()
             } catch (e: Exception) {
                 e.printStackTrace()
-                return id
+                return -1L
             }
         }
         return id

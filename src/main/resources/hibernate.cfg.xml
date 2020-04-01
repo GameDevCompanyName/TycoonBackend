@@ -18,8 +18,6 @@
 
         <!-- Drop and re-create the database schema on startup -->
         <property name="hbm2ddl.auto">update</property>
-
-        <mapping class="ru.gdcn.tycoon.storage.entity.City"/>
     </session-factory>
 </hibernate-configuration>
 
