@@ -35,6 +35,7 @@ dependencies {
     implementation "io.ktor:ktor-auth:$ktor_version"
     implementation "io.ktor:ktor-jackson:$ktor_version"
 
+
     implementation "org.postgresql:postgresql:42.2.11"
 
     implementation "org.hibernate:hibernate-gradle-plugin:5.4.12.Final"
