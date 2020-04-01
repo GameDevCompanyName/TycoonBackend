@@ -5,5 +5,6 @@ import java.util.*
 
 interface IPlayerRepository {
     fun save(player: Player): Long
-    fun findByUserId(userId: String): Optional<Player>
+    fun findByUserId(userId: Long): Optional<Player>
+    fun findByCityId(cityId: Long): List<Player>
 }

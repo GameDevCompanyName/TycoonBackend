@@ -14,8 +14,8 @@ class PlayerRepositoryImpl : BaseDataRepository<Player>("Player"),
 
     override fun save(player: Player): Long = saveEntity(player)
 
-    override fun findByUserId(userId: String): Optional<Player> {
-        val selectResult = findByColumnName("userId", userId)
+    override fun findByUserId(userId: Long): Optional<Player> {
+        val selectResult = findByColumnName("userId", userId.toString())
         return if (selectResult.isEmpty()) {
             Optional.empty()
         } else {
@@ -27,4 +27,6 @@ class PlayerRepositoryImpl : BaseDataRepository<Player>("Player"),
             }
         }
     }
+
+    override fun findByCityId(cityId: Long): List<Player> = findByColumnName("cityId", cityId.toString())
 }

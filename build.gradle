@@ -1,7 +1,5 @@
-import java.rmi.ServerError
-
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.70'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.71'
 }
 
 apply plugin: 'application'
@@ -23,11 +21,15 @@ compileTestKotlin {
 repositories {
     jcenter()
     mavenCentral()
+    google()
 }
 
-ext.ktor_version = '1.3.2'
+ext {
+    ktor_version = '1.3.2'
+}
 
 dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     implementation "io.ktor:ktor-server-core:$ktor_version"
@@ -35,6 +37,7 @@ dependencies {
     implementation "io.ktor:ktor-auth:$ktor_version"
     implementation "io.ktor:ktor-jackson:$ktor_version"
     implementation "io.ktor:ktor-websockets:$ktor_version"
+    implementation "io.ktor:ktor-server-sessions:$ktor_version"
 
     implementation "org.postgresql:postgresql:42.2.11"
 

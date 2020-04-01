@@ -23,6 +23,8 @@ import ru.gdcn.tycoon.storage.entity.Player
 import ru.gdcn.tycoon.storage.entity.Role
 import ru.gdcn.tycoon.storage.entity.User
 
+import java.io.File
+
 
 class SessionToken(val username: String)
 
@@ -31,13 +33,13 @@ private const val PARAM_NAME_LOGIN_PASSWORD = "password"
 private const val PARAM_NAME_REGISTRATION_PASSWORD_CONFIRM = "passwordConfirm"
 private const val TOKEN_NAME = "TOKEN"
 
-private const val AUTH_FORM_NAME = "FormAuth"
+const val AUTH_FORM_NAME = "FormAuth"
 
 private val logger: Logger by lazy { LoggerFactory.getLogger("AuthLogger") }
 
 fun Application.installSession() {
     install(Sessions) {
-        cookie<SessionToken>(TOKEN_NAME, SessionStorageMemory())
+        cookie<SessionToken>(TOKEN_NAME, directorySessionStorage(File("/sessionstor.txt"), false))
     }
 }
 
