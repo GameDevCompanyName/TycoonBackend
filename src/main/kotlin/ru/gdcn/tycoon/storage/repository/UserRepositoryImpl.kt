@@ -9,8 +9,7 @@ import ru.gdcn.tycoon.storage.repository.base.IUserRepository
 
 import java.util.*
 
-class UserRepositoryImpl : BaseDataRepository<User>("User"),
-    IUserRepository {
+class UserRepositoryImpl : BaseDataRepository<User>("User"), IUserRepository {
 
     private val logger: Logger by lazy { LoggerFactory.getLogger(UserRepositoryImpl::class.java) }
 

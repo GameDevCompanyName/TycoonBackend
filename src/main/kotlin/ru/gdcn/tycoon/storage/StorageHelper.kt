@@ -50,4 +50,8 @@ object StorageHelper {
     val playerResourceRepository: IPlayerResourceRepository by lazy {
         PlayerResourceRepositoryImpl()
     }
+
+    val roadRepository: IRoadRepository by lazy {
+        RoadRepositoryImpl()
+    }
 }

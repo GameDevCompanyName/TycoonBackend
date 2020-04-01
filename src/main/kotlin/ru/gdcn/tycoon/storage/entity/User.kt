@@ -1,5 +1,6 @@
 package ru.gdcn.tycoon.storage.entity
 
+import java.sql.Timestamp
 import javax.persistence.*
 
 import kotlin.jvm.Transient
@@ -23,13 +24,17 @@ class User() {
     @Column(nullable = false)
     var role: Int = -1
 
+    @Column(nullable = false)
+    lateinit var registered: Timestamp
+
     @Transient
     lateinit var passwordConfirm: String
 
-    constructor(username: String, password: ByteArray, salt: ByteArray, role: Int) : this() {
+    constructor(username: String, password: ByteArray, salt: ByteArray, role: Int, registeredTimestamp: Timestamp) : this() {
         this.username = username
         this.password = password
         this.salt = salt
         this.role = role
+        this.registered = registeredTimestamp
     }
 }

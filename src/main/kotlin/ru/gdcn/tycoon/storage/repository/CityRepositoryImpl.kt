@@ -6,8 +6,7 @@ import ru.gdcn.tycoon.storage.repository.base.ICityRepository
 
 import java.util.*
 
-class CityRepositoryImpl : BaseDataRepository<City>("City"),
-    ICityRepository {
+class CityRepositoryImpl : BaseDataRepository<City>("City"), ICityRepository {
 
     override fun save(city: City): Long = saveEntity(city)
 

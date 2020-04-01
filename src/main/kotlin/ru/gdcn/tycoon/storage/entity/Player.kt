@@ -17,11 +17,11 @@ class Player() {
     @Column(nullable = false)
     var money: Long = 0
 
-    @Column(nullable = false)
+    @Column(name = "city_id", nullable = false)
     @JoinColumn(name = "city_id")
     var cityId: Long = -1
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "user_id", unique = true, nullable = false)
     @JoinColumn(name = "user_id")
     var userId: Long = -1
 

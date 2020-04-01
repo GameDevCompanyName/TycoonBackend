@@ -25,6 +25,7 @@ import ru.gdcn.tycoon.storage.entity.User
 import ru.gdcn.tycoon.util.PassHashing
 
 import java.io.File
+import java.sql.Timestamp
 
 
 class SessionToken(val username: String)
@@ -170,7 +171,8 @@ private fun initRegistrationRoute(routing: Routing) {
             username = username,
             password = pair.get().first,
             salt = pair.get().second,
-            role = Role.USER.id
+            role = Role.USER.id,
+            registeredTimestamp = Timestamp(System.currentTimeMillis())
         )
         newUser.id = StorageHelper.userRepository.save(newUser)
         if (newUser.id == -1L) {

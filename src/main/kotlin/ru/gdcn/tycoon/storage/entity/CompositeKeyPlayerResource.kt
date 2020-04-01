@@ -9,12 +9,12 @@ import javax.persistence.JoinColumn
 @Embeddable
 class CompositeKeyPlayerResource : Serializable {
     @Range(min = 0)
-    @Column(nullable = false)
+    @Column(name = "player_id", nullable = false)
     @JoinColumn(name = "player_id")
     var playerId: Long = -1
 
     @Range(min = 0)
-    @Column(nullable = false)
+    @Column(name = "resource_id", nullable = false)
     @JoinColumn(name = "resource_id")
     var resourceId: Long = -1
 

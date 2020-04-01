@@ -10,12 +10,12 @@ import javax.persistence.JoinColumn
 class CompositeKeyCityResource : Serializable{
 
     @Range(min = 0)
-    @Column(nullable = false)
+    @Column(name = "city_id", nullable = false)
     @JoinColumn(name = "city_id")
     var cityId: Long = -1
 
     @Range(min = 0)
-    @Column(nullable = false)
+    @Column(name = "resource_id", nullable = false)
     @JoinColumn(name = "resource_id")
     var resourceId: Long = -1
 

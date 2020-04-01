@@ -7,8 +7,7 @@ import ru.gdcn.tycoon.storage.repository.base.BaseDataRepository
 import ru.gdcn.tycoon.storage.repository.base.IPlayerRepository
 import java.util.*
 
-class PlayerRepositoryImpl : BaseDataRepository<Player>("Player"),
-    IPlayerRepository {
+class PlayerRepositoryImpl : BaseDataRepository<Player>("Player"), IPlayerRepository {
 
     private val logger: Logger by lazy { LoggerFactory.getLogger(PlayerRepositoryImpl::class.java) }
 
