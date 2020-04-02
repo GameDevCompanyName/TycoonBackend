@@ -1,7 +1,9 @@
 package ru.gdcn.tycoon.api.requests
 
 import com.fasterxml.jackson.databind.ObjectMapper
+
 import org.json.simple.JSONObject
+
 import ru.gdcn.tycoon.api.FramesHandler
 import ru.gdcn.tycoon.api.conf.Request
 import ru.gdcn.tycoon.api.conf.Response
@@ -54,15 +56,13 @@ object MainRequests {
                 if (cityInfo.isEmpty || player.isEmpty || worldMap == null) {
                     Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_GET_INFO.text).toJSONString()
                 } else {
-                    val jsonCity = cityInfo.get().toJSONString()
-                    val jsonPlayer = player.get().toJSONString()
 
                     val obj = JSONObject()
-                    obj["city"] = jsonCity
-                    obj["player"] = jsonPlayer
+                    obj["city"] = cityInfo.get()
+                    obj["player"] = player.get()
                     obj["world"] = worldMap
 
-                    Response(ResponseStatus.OK.code, obj.toJSONString()).toJSONString()
+                    Response(ResponseStatus.OK.code, obj).toJSONString()
                 }
             }
             RequestedResourceType.REQ_MOVE_TO_OTHER_CITY.resource -> {
@@ -71,23 +71,24 @@ object MainRequests {
                     Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
                 } else {
                     val player = getPlayerByUserName(username)
-                    var cityInfo = getCityInfo(username)
+                    var currentCityInfo = getCityInfo(username)
+                    val newCityInfo = getCityInfo(toCityId.toLong())
 
-                    if (player.isEmpty || cityInfo.isEmpty) {
+                    if (player.isEmpty || currentCityInfo.isEmpty || newCityInfo.isEmpty) {
                         Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
                     } else {
-                        player.get().cityId = cityInfo.get().id
+                        player.get().cityId = toCityId.toLong()
                         val result = StorageHelper.transaction {
                             StorageHelper.playerRepository.update(it, player.get())
                             TransactionResult(isRollback = false, data = true)
                         }
 
                         if (!result.isEmpty && result.get()) {
-                            cityInfo = getCityInfo(cityInfo.get().id)
-                            if (cityInfo.isEmpty) {
+                            currentCityInfo = getCityInfo(currentCityInfo.get().id)
+                            if (currentCityInfo.isEmpty) {
                                 Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
                             } else {
-                                Response(ResponseStatus.OK.code, cityInfo.get().toJSONString()).toJSONString()
+                                Response(ResponseStatus.OK.code, currentCityInfo.get()).toJSONString()
                             }
                         } else {
                             Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
@@ -114,8 +115,7 @@ object MainRequests {
         return if (city.isEmpty) {
             Optional.empty()
         } else {
-            val jsonMap = ObjectMapper().writer().writeValueAsString(city.get())
-            Optional.of(jsonMap)
+            Optional.of(ObjectMapper().writer().writeValueAsString(city.get()))
         }
     }
 
