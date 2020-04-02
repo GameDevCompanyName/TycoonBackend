@@ -5,7 +5,7 @@ import java.util.*
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-object PassHashing {
+object HashingHelper {
     /**
      * @return Optional<Pair<HashedPassword, Salt>>
      */

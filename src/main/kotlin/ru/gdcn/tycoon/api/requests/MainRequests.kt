@@ -7,6 +7,7 @@ import ru.gdcn.tycoon.api.conf.Request
 import ru.gdcn.tycoon.api.conf.Response
 import ru.gdcn.tycoon.api.conf.ResponseStatus
 import ru.gdcn.tycoon.storage.StorageHelper
+import ru.gdcn.tycoon.storage.TransactionResult
 import ru.gdcn.tycoon.storage.entity.Player
 import java.util.*
 
@@ -16,7 +17,7 @@ object MainRequests {
         request: Request,
         actionListener: FramesHandler.RequestExecutorListener
     ) {
-        val response = when(request.method) {
+        val response = when (request.method) {
             RequestedResourceType.REQ_GAME_PLAYER.resource -> getPlayerInfo(username)
             RequestedResourceType.REQ_GAME_CITY.resource -> getCityInfo(username)
             else -> Response(ResponseStatus.ERROR.code, "")
@@ -41,24 +42,51 @@ object MainRequests {
             return Response(ResponseStatus.ERROR.code, "")
         }
 
-        val city = StorageHelper.cityRepository.findById(player.get().cityId)
-        if (city.isEmpty) {
-            return Response(ResponseStatus.ERROR.code, "")
+        val stringCity = StorageHelper.transaction<String> { session ->
+            val city = StorageHelper.cityRepository.findById(session, player.get().cityId)
+            if (city == null) {
+                return@transaction TransactionResult(
+                    true,
+                    null
+                )
+            }
+
+            val players = StorageHelper.playerRepository.findByCityId(session, city.id)
+            if (players == null) {
+                return@transaction TransactionResult(
+                    true,
+                    null
+                )
+            }
+
+            city.players = players.map { it.name }.toMutableSet()
+
+            return@transaction TransactionResult(
+                false,
+                ObjectMapper().writer().writeValueAsString(city)
+            )
         }
 
-        val players = StorageHelper.playerRepository.findByCityId(city.get().id)
-        city.get().players = players.map { it.name }.toMutableSet()
-
-        val stringCity = ObjectMapper().writer().writeValueAsString(city.get())
-        return Response(ResponseStatus.OK.code, stringCity)
+        return if (stringCity.isEmpty) {
+            Response(ResponseStatus.ERROR.code, "Сouldn't get information about the city!")
+        } else {
+            Response(ResponseStatus.OK.code, stringCity.get())
+        }
     }
 
     private fun getPlayerByUserName(username: String): Optional<Player> {
-        val user = StorageHelper.userRepository.findByName(username)
-        if (user.isEmpty) {
-            return Optional.empty()
+        return StorageHelper.transaction { session ->
+            val user = StorageHelper.userRepository.findByName(session, username)
+            if (user == null) {
+                return@transaction TransactionResult<Player>(true, null)
+            } else {
+                val player = StorageHelper.playerRepository.findByUserId(session, user.id)
+                return@transaction if (player == null) {
+                    TransactionResult<Player>(true, null)
+                } else {
+                    TransactionResult(false, player)
+                }
+            }
         }
-
-        return StorageHelper.playerRepository.findByUserId(user.get().id)
     }
 }

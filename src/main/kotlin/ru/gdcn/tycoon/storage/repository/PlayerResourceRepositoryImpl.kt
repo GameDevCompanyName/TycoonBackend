@@ -1,5 +1,6 @@
 package ru.gdcn.tycoon.storage.repository
 
+import org.hibernate.Session
 import ru.gdcn.tycoon.storage.entity.CompositeKeyPlayerResource
 import ru.gdcn.tycoon.storage.entity.PlayerResource
 import ru.gdcn.tycoon.storage.repository.base.BaseDataRepository
@@ -10,9 +11,9 @@ class PlayerResourceRepositoryImpl :
     BaseDataRepository<PlayerResource>("PlayerResource"),
     IPlayerResourceRepository
 {
-    override fun findByCompositeId(id: CompositeKeyPlayerResource): Optional<PlayerResource>
-            = findByPrimaryKey(PlayerResource::class.java, id)
+    override fun findByCompositeId(session: Session, id: CompositeKeyPlayerResource): PlayerResource?
+            = findByPrimaryKey(session, PlayerResource::class.java, id)
 
-    override fun findByPlayerId(playerId: Long): List<PlayerResource>
-            = findByColumnName("player_id", playerId.toString())
+    override fun findByPlayerId(session: Session, playerId: Long): List<PlayerResource>?
+            = findByColumnName(session,"player_id", playerId.toString())
 }

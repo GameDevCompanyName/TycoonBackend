@@ -8,7 +8,6 @@ import kotlin.jvm.Transient
 @Table(name = "t_city")
 class City {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     var id: Long = -1
 
     @Column(unique = true, nullable = false)
@@ -22,7 +21,7 @@ class City {
     @Range(min = 0)
     var population: Int = 0
 
-    @Column(name = "polygon_data", nullable = false)
+    @Column(name = "polygon_data", nullable = false, length = 1000)
     lateinit var polygonData: String
 
     @Transient

@@ -1,10 +1,11 @@
 package ru.gdcn.tycoon.storage.entity
 
 import org.hibernate.validator.constraints.Range
+import java.io.Serializable
 import javax.persistence.*
 
 @Embeddable
-class CompositeKeyRoad {
+class CompositeKeyRoad : Serializable{
     @Range(min = 0)
     @Column(name = "from_city_id", nullable = false)
     @JoinColumn(name = "city_id")
@@ -14,6 +15,11 @@ class CompositeKeyRoad {
     @Column(name = "to_city_id", nullable = false)
     @JoinColumn(name = "city_id")
     var toCityId: Long = -1
+
+    constructor(fromCityId: Long, toCityId: Long) {
+        this.fromCityId = fromCityId
+        this.toCityId = toCityId
+    }
 }
 
 @Entity

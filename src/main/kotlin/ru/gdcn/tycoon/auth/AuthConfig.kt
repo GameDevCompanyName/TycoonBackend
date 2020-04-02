@@ -4,7 +4,6 @@ import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.auth.*
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.request.receiveParameters
 import io.ktor.response.respond
@@ -12,6 +11,7 @@ import io.ktor.routing.Routing
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.sessions.*
+import org.hibernate.Session
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,10 +19,11 @@ import org.slf4j.LoggerFactory
 import ru.gdcn.tycoon.api.conf.Response
 import ru.gdcn.tycoon.api.conf.ResponseStatus
 import ru.gdcn.tycoon.storage.StorageHelper
+import ru.gdcn.tycoon.storage.TransactionResult
 import ru.gdcn.tycoon.storage.entity.Player
 import ru.gdcn.tycoon.storage.entity.Role
 import ru.gdcn.tycoon.storage.entity.User
-import ru.gdcn.tycoon.util.PassHashing
+import ru.gdcn.tycoon.util.HashingHelper
 
 import java.io.File
 import java.sql.Timestamp
@@ -59,9 +60,15 @@ fun Application.installAuth() {
                 )
             }
             validate { credentials ->
-                val user = StorageHelper.userRepository.findByName(credentials.name)
+                val user = StorageHelper.transaction { session ->
+                    TransactionResult(
+                        false,
+                        StorageHelper.userRepository.findByName(session, credentials.name)
+                    )
+                }
+
                 if (!user.isEmpty
-                    && PassHashing.equalsPassword(
+                    && HashingHelper.equalsPassword(
                         user.get().password,
                         credentials.password, user.get().salt
                     )
@@ -135,17 +142,6 @@ private fun initRegistrationRoute(routing: Routing) {
             return@post
         }
 
-        val user = StorageHelper.userRepository.findByName(username)
-        if (!user.isEmpty) {
-            call.respond(
-                Response(
-                    ResponseStatus.ERROR.code,
-                    "User already exists!"
-                )
-            )
-            return@post
-        }
-
         if (password != passwordConfirm) {
             call.respond(
                 Response(
@@ -156,15 +152,31 @@ private fun initRegistrationRoute(routing: Routing) {
             return@post
         }
 
-        val pair = PassHashing.hashPassword(password)
-        if (pair.isEmpty) {
-            call.respond(
-                Response(
-                    ResponseStatus.ERROR.code,
-                    "Failed to create a user!"
-                )
+        val response = createNewUser(username, password)
+        if (response.status == ResponseStatus.OK.code) {
+            call.sessions.set(SessionToken(username))
+            logger.info("\'${username}\' was registered!")
+        }
+        call.respond(response)
+    }
+}
+
+private fun createNewUser(username: String, password: String): Response<String> {
+    val result = StorageHelper.transaction { session ->
+        val userFromDB = StorageHelper.userRepository.findByName(session, username)
+        if (userFromDB != null) {
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.ERROR.code, "User already exists!")
             )
-            return@post
+        }
+
+        val pair = HashingHelper.hashPassword(password)
+        if (pair.isEmpty) {
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+            )
         }
 
         val newUser = User(
@@ -174,49 +186,43 @@ private fun initRegistrationRoute(routing: Routing) {
             role = Role.USER.id,
             registeredTimestamp = Timestamp(System.currentTimeMillis())
         )
-        newUser.id = StorageHelper.userRepository.save(newUser)
-        if (newUser.id == -1L) {
-            call.respond(
-                Response(
-                    ResponseStatus.ERROR.code,
-                    "Failed to create a user!"
-                )
-            )
+        val newId = StorageHelper.userRepository.save(session, newUser)
+        if (newId == null) {
             logger.error("\'${newUser.username}\' - failed to create. Cause: ¯\\_(ツ)_/¯")
-            return@post
-        }
-
-        if (!createPlayerByUser(newUser)) {
-            StorageHelper.userRepository.delete(newUser)
-            call.respond(
-                Response(
-                    ResponseStatus.FAILED_CREATE_PLAYER.code,
-                    "Failed to create a character!"
-                )
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.ERROR.code, "Failed to create a user!")
             )
-            logger.error("Failed to create a character. '${newUser.username}' was delete")
-            return@post
         }
 
-        call.sessions.set(SessionToken(newUser.username))
-        call.respond(Response(ResponseStatus.OK.code, "User registered"))
+        if (!createPlayerByUser(session, newUser)) {
+            logger.error("Failed to create a character. \'${newUser.username}\' is not created!")
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.FAILED_CREATE_PLAYER.code, "Failed to create a character!")
+            )
+        }
 
-        logger.info("\'${newUser.username}\' was registered!")
+        return@transaction TransactionResult(
+            false,
+            Response(ResponseStatus.OK.code, "User registered")
+        )
+    }
+
+    return if (result.isEmpty) {
+        Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+    } else {
+        result.get()
     }
 }
 
-private fun createPlayerByUser(user: User): Boolean {
-    val cites = StorageHelper.cityRepository.findAll()
-    if (cites.isEmpty()) {
-        return false
-    }
-
+private fun createPlayerByUser(session: Session, user: User): Boolean {
+    val cites = StorageHelper.cityRepository.findAll(session) ?: return false
     val player = Player(
         name = user.username,
         money = 100,
         cityId = cites.random().id,
         userId = user.id
     )
-
-    return StorageHelper.playerRepository.save(player) != -1L
+    return StorageHelper.playerRepository.save(session, player) != null
 }

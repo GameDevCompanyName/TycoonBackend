@@ -14,8 +14,12 @@ import ru.gdcn.tycoon.api.conf.installWebSocket
 import ru.gdcn.tycoon.api.conf.routeWebSocket
 import ru.gdcn.tycoon.auth.*
 import ru.gdcn.tycoon.util.EnvReader
+import ru.gdcn.tycoon.util.MapReader
 
 fun main() {
+
+    MapReader.readMap()
+
     val host = EnvReader.env[EnvReader.KEY_SERVER_HOST] ?: throw IllegalStateException("HOST not found!")
     val port = EnvReader.env[EnvReader.KEY_SERVER_PORT]?.toInt() ?: throw IllegalStateException("PORT not found!")
 

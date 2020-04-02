@@ -1,5 +1,6 @@
 package ru.gdcn.tycoon.storage.repository
 
+import org.hibernate.Session
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ru.gdcn.tycoon.storage.entity.Player
@@ -11,21 +12,22 @@ class PlayerRepositoryImpl : BaseDataRepository<Player>("Player"), IPlayerReposi
 
     private val logger: Logger by lazy { LoggerFactory.getLogger(PlayerRepositoryImpl::class.java) }
 
-    override fun save(player: Player): Long = saveEntity(player)
+    override fun save(session: Session, player: Player): Long? = saveEntity(session, player) as Long?
 
-    override fun findByUserId(userId: Long): Optional<Player> {
-        val selectResult = findByColumnName("userId", userId.toString())
-        return if (selectResult.isEmpty()) {
-            Optional.empty()
+    override fun findByUserId(session: Session, userId: Long): Player? {
+        val selectResult = findByColumnName(session, "userId", userId.toString())
+        return if (selectResult == null) {
+            null
         } else {
             if (selectResult.size > 1) {
                 logger.error("Персонажей у пользователя с $userId больше одного!")
-                Optional.empty()
+                null
             } else {
-                Optional.of(selectResult.first())
+                selectResult.first()
             }
         }
     }
 
-    override fun findByCityId(cityId: Long): List<Player> = findByColumnName("cityId", cityId.toString())
+    override fun findByCityId(session: Session, cityId: Long): List<Player>?
+            = findByColumnName(session,"cityId", cityId.toString())
 }
