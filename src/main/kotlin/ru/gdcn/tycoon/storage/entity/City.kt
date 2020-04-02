@@ -1,6 +1,7 @@
 package ru.gdcn.tycoon.storage.entity
 
 import org.hibernate.validator.constraints.Range
+import ru.gdcn.tycoon.api.entity.CityInfo
 import javax.persistence.*
 import kotlin.jvm.Transient
 
@@ -26,4 +27,11 @@ class City {
 
     @Transient
     var players: MutableSet<String> = mutableSetOf()
+
+    fun getInfoNotForDrawing(): CityInfo = CityInfo(
+        id,
+        name,
+        population,
+        players.toList()
+    )
 }

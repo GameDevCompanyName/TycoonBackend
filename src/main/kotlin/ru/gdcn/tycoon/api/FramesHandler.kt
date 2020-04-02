@@ -9,7 +9,6 @@ import io.ktor.websocket.DefaultWebSocketServerSession
 
 import ru.gdcn.tycoon.api.conf.Request
 
-import ru.gdcn.tycoon.api.conf.Response
 import ru.gdcn.tycoon.api.requests.MainRequests
 import ru.gdcn.tycoon.api.requests.RequestedResourceType
 import ru.gdcn.tycoon.auth.SessionToken
@@ -20,15 +19,15 @@ import java.util.concurrent.ConcurrentHashMap
 object FramesHandler {
 
     interface RequestExecutorListener {
-        suspend fun onSendResponse(sender: String, response: Response<String>)
+        suspend fun onSendResponse(sender: String, jsonMessage: String)
         suspend fun onDisconnect(username: String, webSocket: DefaultWebSocketServerSession)
         suspend fun onSendAll(username: String, message: String)
     }
 
     private val executorListener = object : RequestExecutorListener {
-        override suspend fun onSendResponse(sender: String, response: Response<String>) {
+        override suspend fun onSendResponse(sender: String, jsonMessage: String) {
             val webSocket = connections[sender] ?: return
-            webSocket.outgoing.send(Frame.Text(ObjectMapper().writer().writeValueAsString(response)))
+            webSocket.outgoing.send(Frame.Text(jsonMessage))
         }
 
         override suspend fun onSendAll(username: String, message: String) {

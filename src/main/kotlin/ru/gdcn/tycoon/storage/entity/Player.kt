@@ -1,5 +1,6 @@
 package ru.gdcn.tycoon.storage.entity
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.hibernate.validator.constraints.Range
 import javax.persistence.*
 
@@ -31,4 +32,6 @@ class Player() {
         this.userId = userId
         this.cityId = cityId
     }
+
+    fun toJSONString(): String = ObjectMapper().writer().writeValueAsString(this)
 }
