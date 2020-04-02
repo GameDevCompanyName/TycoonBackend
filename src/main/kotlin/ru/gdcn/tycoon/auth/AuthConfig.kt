@@ -11,39 +11,68 @@ import io.ktor.routing.Routing
 import io.ktor.routing.get
 import io.ktor.routing.post
 import io.ktor.sessions.*
-import ru.gdcn.tycoon.api.Response
-import ru.gdcn.tycoon.api.ResponseStatus
+import org.hibernate.Session
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+import ru.gdcn.tycoon.api.conf.Response
+import ru.gdcn.tycoon.api.conf.ResponseStatus
 import ru.gdcn.tycoon.storage.StorageHelper
+import ru.gdcn.tycoon.storage.TransactionResult
+import ru.gdcn.tycoon.storage.entity.Player
 import ru.gdcn.tycoon.storage.entity.Role
 import ru.gdcn.tycoon.storage.entity.User
+import ru.gdcn.tycoon.util.HashingHelper
+
+import java.io.File
+import java.sql.Timestamp
+
 
 class SessionToken(val username: String)
 
 private const val PARAM_NAME_LOGIN_USERNAME = "username"
 private const val PARAM_NAME_LOGIN_PASSWORD = "password"
-private const val PARAM_NAME_REGISTRATION_PASSWORD_CONFIRM = "password"
+private const val PARAM_NAME_REGISTRATION_PASSWORD_CONFIRM = "passwordConfirm"
 private const val TOKEN_NAME = "TOKEN"
 
-private const val AUTH_FROM_NAME = "FormAuth"
+const val AUTH_FORM_NAME = "FormAuth"
+
+private val logger: Logger by lazy { LoggerFactory.getLogger("AuthLogger") }
 
 fun Application.installSession() {
     install(Sessions) {
-        cookie<SessionToken>(TOKEN_NAME, SessionStorageMemory())
+        cookie<SessionToken>(TOKEN_NAME, directorySessionStorage(File("/sessionstor.txt"), false))
     }
 }
 
 fun Application.installAuth() {
     install(Authentication) {
-        form(AUTH_FROM_NAME) {
+        form(AUTH_FORM_NAME) {
             userParamName = PARAM_NAME_LOGIN_USERNAME
             passwordParamName = PARAM_NAME_LOGIN_PASSWORD
             challenge {
-                call.respond(Response(ResponseStatus.ERROR, "Incorrect FORM parameter!"))
+                call.respond(
+                    Response(
+                        ResponseStatus.ERROR.code,
+                        "Invalid username or password!"
+                    )
+                )
             }
             validate { credentials ->
-                val user = StorageHelper.userRepository.findByName(credentials.name)
-                if (!user.isEmpty && user.get().password == credentials.password) {
+                val user = StorageHelper.transaction { session ->
+                    TransactionResult(
+                        false,
+                        StorageHelper.userRepository.findByName(session, credentials.name)
+                    )
+                }
+
+                if (!user.isEmpty
+                    && HashingHelper.equalsPassword(
+                        user.get().password,
+                        credentials.password, user.get().salt
+                    )
+                ) {
                     UserIdPrincipal(credentials.name)
                 } else {
                     null
@@ -55,18 +84,48 @@ fun Application.installAuth() {
 }
 
 fun Routing.routeAuth() {
-    post("/registration") {
-        if (call.sessions.get<SessionToken>() != null) {
-            call.respond(Response(ResponseStatus.ALREADY_LOGGED, "User already logged!"))
-            return@post
-        }
+    initRegistrationRoute(this)
+    initAuthenticateRoute(this)
+}
 
+private fun initAuthenticateRoute(routing: Routing) {
+    routing.authenticate(AUTH_FORM_NAME) {
+        post("/login") {
+            val principal = call.principal<UserIdPrincipal>()
+            if (principal == null) {
+                call.respond(
+                    Response(
+                        ResponseStatus.ERROR.code,
+                        "Failed login!"
+                    )
+                )
+                return@post
+            }
+
+            call.sessions.set(TOKEN_NAME, SessionToken(principal.name))
+            call.respond(Response(ResponseStatus.OK.code, "User logged"))
+
+            logger.info("\'${principal.name}\' logged")
+        }
+        get("/test") {
+            call.respond(call.sessions.get<SessionToken>()?.username ?: "LOX")
+        }
+    }
+}
+
+private fun initRegistrationRoute(routing: Routing) {
+    routing.post("/registration") {
         val parameters: Parameters
         try {
             parameters = call.receiveParameters()
         } catch (e: Exception) {
             e.printStackTrace()
-            call.respond(Response(ResponseStatus.ERROR, "Can't receive parameters!"))
+            call.respond(
+                Response(
+                    ResponseStatus.ERROR.code,
+                    "Can't receive parameters!"
+                )
+            )
             return@post
         }
 
@@ -76,55 +135,94 @@ fun Routing.routeAuth() {
         if (username == null || password == null || passwordConfirm == null) {
             call.respond(
                 Response(
-                    ResponseStatus.ERROR,
-                    "Incorrect username=$username or password=$password or passwordConfirm=$passwordConfirm"
+                    ResponseStatus.ERROR.code,
+                    "Incorrect key for parameters username or password or passwordConfirm!"
                 )
             )
             return@post
         }
 
-        val user = StorageHelper.userRepository.findByName(username)
-        if (!user.isEmpty) {
-            call.respond(Response(ResponseStatus.ERROR, "User already exists!"))
-            return@post
-        }
-
         if (password != passwordConfirm) {
-            call.respond(Response(ResponseStatus.ERROR, "Password not equals!"))
+            call.respond(
+                Response(
+                    ResponseStatus.ERROR.code,
+                    "Passwords not equals!"
+                )
+            )
             return@post
         }
 
-        val newUser = User()
-        newUser.username = username
-        newUser.password = password
-        newUser.role = Role.USER.id
-        val status = StorageHelper.userRepository.save(newUser)
-        if (!status) {
-            call.respond(Response(ResponseStatus.ERROR, "Failed to create a user!"))
-            return@post
+        val response = createNewUser(username, password)
+        if (response.status == ResponseStatus.OK.code) {
+            call.sessions.set(SessionToken(username))
+            logger.info("\'${username}\' was registered!")
         }
-
-        call.sessions.set(SessionToken(newUser.username))
-        call.respond(Response(ResponseStatus.OK, null))
+        call.respond(response)
     }
-    authenticate(AUTH_FROM_NAME) {
-        post("/login") {
-            if (call.sessions.get<SessionToken>() != null) {
-                call.respond(Response(ResponseStatus.ALREADY_LOGGED, "User already logged!"))
-                return@post
-            }
+}
 
-            val principal = call.principal<UserIdPrincipal>()
-            if (principal == null) {
-                call.respond(Response(ResponseStatus.ERROR, "Failed login!"))
-                return@post
-            }
+private fun createNewUser(username: String, password: String): Response<String> {
+    val result = StorageHelper.transaction { session ->
+        val userFromDB = StorageHelper.userRepository.findByName(session, username)
+        if (userFromDB != null) {
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.ERROR.code, "User already exists!")
+            )
+        }
 
-            call.sessions.set(SessionToken(principal.name))
-            call.respond(Response(ResponseStatus.OK, null))
+        val pair = HashingHelper.hashPassword(password)
+        if (pair.isEmpty) {
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+            )
         }
-        get("/test") {
-            call.respond(call.sessions.get<SessionToken>()?.username ?: "LOX")
+
+        val newUser = User(
+            username = username,
+            password = pair.get().first,
+            salt = pair.get().second,
+            role = Role.USER.id,
+            registeredTimestamp = Timestamp(System.currentTimeMillis())
+        )
+        val newId = StorageHelper.userRepository.save(session, newUser)
+        if (newId == null) {
+            logger.error("\'${newUser.username}\' - failed to create. Cause: ¯\\_(ツ)_/¯")
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+            )
         }
+
+        if (!createPlayerByUser(session, newUser)) {
+            logger.error("Failed to create a character. \'${newUser.username}\' is not created!")
+            return@transaction TransactionResult(
+                true,
+                Response(ResponseStatus.FAILED_CREATE_PLAYER.code, "Failed to create a character!")
+            )
+        }
+
+        return@transaction TransactionResult(
+            false,
+            Response(ResponseStatus.OK.code, "User registered")
+        )
     }
+
+    return if (result.isEmpty) {
+        Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+    } else {
+        result.get()
+    }
+}
+
+private fun createPlayerByUser(session: Session, user: User): Boolean {
+    val cites = StorageHelper.cityRepository.findAll(session) ?: return false
+    val player = Player(
+        name = user.username,
+        money = 100,
+        cityId = cites.random().id,
+        userId = user.id
+    )
+    return StorageHelper.playerRepository.save(session, player) != null
 }

@@ -1,40 +1,33 @@
 package ru.gdcn.tycoon.storage.repository
 
+import org.hibernate.Session
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ru.gdcn.tycoon.storage.StorageHelper
 import ru.gdcn.tycoon.storage.entity.User
+import ru.gdcn.tycoon.storage.repository.base.BaseDataRepository
+import ru.gdcn.tycoon.storage.repository.base.IUserRepository
 
 import java.util.*
 
-class UserRepositoryImpl : BaseDataRepository<User>("User"), UserRepository {
+class UserRepositoryImpl : BaseDataRepository<User>("User"), IUserRepository {
 
-    val logger: Logger by lazy { LoggerFactory.getLogger(UserRepositoryImpl::class.java) }
+    private val logger: Logger by lazy { LoggerFactory.getLogger(UserRepositoryImpl::class.java) }
 
-    override fun save(user: User): Boolean {
-        StorageHelper.sessionFactory.openSession().use {
-            try {
-                it.beginTransaction()
-                it.save(user)
-                it.transaction.commit()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return false
-            }
-        }
-        return true
-    }
+    override fun save(session: Session, user: User): Long? = saveEntity(session, user) as Long?
 
-    override fun findByName(name: String): Optional<User> {
-        val selectResult = findByColumnName("username", name)
-        return if (selectResult.isEmpty()) {
-            Optional.empty()
+    override fun delete(session: Session, user: User) = deleteEntity(session, user)
+
+    override fun findByName(session: Session, name: String): User? {
+        val selectResult = findByColumnName(session, "username", name)
+        return if (selectResult == null || selectResult.isEmpty()) {
+            null
         } else {
             if (selectResult.size > 1) {
                 logger.error("Пользователей с именем $name больше одного!")
-                Optional.empty()
+                null
             } else {
-                Optional.of(selectResult.first())
+                selectResult.first()
             }
         }
     }
