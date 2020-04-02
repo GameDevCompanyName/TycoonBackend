@@ -65,6 +65,36 @@ object MainRequests {
                     Response(ResponseStatus.OK.code, obj.toJSONString()).toJSONString()
                 }
             }
+            RequestedResourceType.REQ_MOVE_TO_OTHER_CITY.resource -> {
+                val toCityId = request.parameters["cityId"]
+                if (toCityId == null) {
+                    Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
+                } else {
+                    val player = getPlayerByUserName(username)
+                    var cityInfo = getCityInfo(username)
+
+                    if (player.isEmpty || cityInfo.isEmpty) {
+                        Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
+                    } else {
+                        player.get().cityId = cityInfo.get().id
+                        val result = StorageHelper.transaction {
+                            StorageHelper.playerRepository.update(it, player.get())
+                            TransactionResult(isRollback = false, data = true)
+                        }
+
+                        if (!result.isEmpty && result.get()) {
+                            cityInfo = getCityInfo(cityInfo.get().id)
+                            if (cityInfo.isEmpty) {
+                                Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
+                            } else {
+                                Response(ResponseStatus.OK.code, cityInfo.get().toJSONString()).toJSONString()
+                            }
+                        } else {
+                            Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
+                        }
+                    }
+                }
+            }
             else -> Response(ResponseStatus.ERROR.code, ResponseCauseText.UNKNOWN_REQUEST.text).toJSONString()
         }
 
@@ -96,9 +126,12 @@ object MainRequests {
         if (player.isEmpty) {
             return Optional.empty()
         }
+        return getCityInfo(player.get().cityId)
+    }
 
+    private fun getCityInfo(cityId: Long): Optional<CityInfo> {
         val city = StorageHelper.transaction<City> { session ->
-            val city = StorageHelper.cityRepository.findById(session, player.get().cityId)
+            val city = StorageHelper.cityRepository.findById(session, cityId)
                 ?: return@transaction TransactionResult(true, null)
 
             val players = StorageHelper.playerRepository.findByCityId(session, city.id)

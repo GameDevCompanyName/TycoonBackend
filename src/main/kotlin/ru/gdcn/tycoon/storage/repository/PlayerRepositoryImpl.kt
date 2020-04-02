@@ -14,6 +14,8 @@ class PlayerRepositoryImpl : BaseDataRepository<Player>("Player"), IPlayerReposi
 
     override fun save(session: Session, player: Player): Long? = saveEntity(session, player) as Long?
 
+    override fun update(session: Session, player: Player) = updateEntity(session, player)
+
     override fun findByUserId(session: Session, userId: Long): Player? {
         val selectResult = findByColumnName(session, "userId", userId.toString())
         return if (selectResult == null) {

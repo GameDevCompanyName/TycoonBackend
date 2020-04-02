@@ -8,6 +8,8 @@ open class BaseDataRepository<T>(private val entityName: String) {
 
     fun saveEntity(session: Session, entity: T): Serializable? = session.save(entity)
 
+    fun updateEntity(session: Session, entity: T) = session.update(entity)
+
     fun deleteEntity(session: Session, entity: T) = session.delete(entity)
 
     fun findByPrimaryKey(session: Session, entityClass: Class<T>, primaryKey: Any): T?

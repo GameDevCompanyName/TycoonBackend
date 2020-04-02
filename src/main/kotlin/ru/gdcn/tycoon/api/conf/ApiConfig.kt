@@ -17,5 +17,6 @@ enum class ResponseCauseText(val text: String) {
     REGISTERED("Registered"),
     FAILED_CREATE_USER("Failed create user!"),
     FAILED_GET_INFO("Failed to get information!"),
+    FAILED_MOVE("Failed move to other city!"),
     UNKNOWN_REQUEST("Unknown request!")
 }

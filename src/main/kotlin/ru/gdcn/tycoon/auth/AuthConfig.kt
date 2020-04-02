@@ -17,6 +17,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import ru.gdcn.tycoon.api.conf.Response
+import ru.gdcn.tycoon.api.conf.ResponseCauseText
 import ru.gdcn.tycoon.api.conf.ResponseStatus
 import ru.gdcn.tycoon.storage.StorageHelper
 import ru.gdcn.tycoon.storage.TransactionResult
@@ -199,18 +200,18 @@ private fun createNewUser(username: String, password: String): Response<String> 
             logger.error("Failed to create a character. \'${newUser.username}\' is not created!")
             return@transaction TransactionResult(
                 true,
-                Response(ResponseStatus.FAILED_CREATE_PLAYER.code, "Failed to create a character!")
+                Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_CREATE_USER.text)
             )
         }
 
         return@transaction TransactionResult(
             false,
-            Response(ResponseStatus.OK.code, "User registered")
+            Response(ResponseStatus.OK.code, ResponseCauseText.REGISTERED.text)
         )
     }
 
     return if (result.isEmpty) {
-        Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+        Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_CREATE_USER.text)
     } else {
         result.get()
     }
