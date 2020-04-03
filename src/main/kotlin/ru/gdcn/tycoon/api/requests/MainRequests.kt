@@ -102,63 +102,70 @@ object MainRequests {
                 } else {
                     val player = getPlayer(username)
                     var currentCityInfo = getCity(username)
-                    var newCityInfo = getCityById(toCityId)
-
-                    if (player.isEmpty || currentCityInfo.isEmpty || newCityInfo.isEmpty) {
+                    if (currentCityInfo.isEmpty || !currentCityInfo.get().neighbors.contains(toCityId)) {
                         Response(
                             ResponseStatus.ERROR.code,
                             request.method,
                             ResponseCauseText.FAILED_MOVE.text
                         ).toJSONString()
                     } else {
-                        player.get().cityId = toCityId
-                        val result = StorageHelper.transaction {
-                            StorageHelper.playerRepository.update(it, player.get())
-                            TransactionResult(isRollback = false, data = true)
-                        }
+                        var newCityInfo = getCityById(toCityId)
+                        if (player.isEmpty || newCityInfo.isEmpty) {
+                            Response(
+                                ResponseStatus.ERROR.code,
+                                request.method,
+                                ResponseCauseText.FAILED_MOVE.text
+                            ).toJSONString()
+                        } else {
+                            player.get().cityId = toCityId
+                            val result = StorageHelper.transaction {
+                                StorageHelper.playerRepository.update(it, player.get())
+                                TransactionResult(isRollback = false, data = true)
+                            }
 
-                        if (!result.isEmpty && result.get()) {
-                            currentCityInfo = getCityById(currentCityInfo.get().id)
-                            if (currentCityInfo.isEmpty) {
-                                Response(
-                                    ResponseStatus.ERROR.code,
-                                    request.method,
-                                    ResponseCauseText.FAILED_MOVE.text
-                                ).toJSONString()
-                            } else {
-                                val oo = JSONObject()
-                                oo["city"] = currentCityInfo.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
-                                val response = Response(
-                                    ResponseStatus.OK.code,
-                                    request.method,
-                                    oo
-                                ).toJSONString()
-                                actionListener.onSendAll(username, response)
-
-                                newCityInfo = getCityById(toCityId)
-                                if (newCityInfo.isEmpty) {
+                            if (!result.isEmpty && result.get()) {
+                                currentCityInfo = getCityById(currentCityInfo.get().id)
+                                if (currentCityInfo.isEmpty) {
                                     Response(
                                         ResponseStatus.ERROR.code,
                                         request.method,
                                         ResponseCauseText.FAILED_MOVE.text
                                     ).toJSONString()
                                 } else {
-                                    val o = JSONObject()
-                                    o["city"] = newCityInfo.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
-
-                                    Response(
+                                    val oo = JSONObject()
+                                    oo["city"] = currentCityInfo.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
+                                    val response = Response(
                                         ResponseStatus.OK.code,
                                         request.method,
-                                        o
+                                        oo
                                     ).toJSONString()
+                                    actionListener.onSendAll(username, response)
+
+                                    newCityInfo = getCityById(toCityId)
+                                    if (newCityInfo.isEmpty) {
+                                        Response(
+                                            ResponseStatus.ERROR.code,
+                                            request.method,
+                                            ResponseCauseText.FAILED_MOVE.text
+                                        ).toJSONString()
+                                    } else {
+                                        val o = JSONObject()
+                                        o["city"] = newCityInfo.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
+
+                                        Response(
+                                            ResponseStatus.OK.code,
+                                            request.method,
+                                            o
+                                        ).toJSONString()
+                                    }
                                 }
+                            } else {
+                                Response(
+                                    ResponseStatus.ERROR.code,
+                                    request.method,
+                                    ResponseCauseText.FAILED_MOVE.text
+                                ).toJSONString()
                             }
-                        } else {
-                            Response(
-                                ResponseStatus.ERROR.code,
-                                request.method,
-                                ResponseCauseText.FAILED_MOVE.text
-                            ).toJSONString()
                         }
                     }
                 }
