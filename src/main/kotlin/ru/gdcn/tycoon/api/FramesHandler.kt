@@ -49,8 +49,8 @@ object FramesHandler {
     private val connections = ConcurrentHashMap<String, DefaultWebSocketServerSession>()
 
     suspend fun handle(webSocket: DefaultWebSocketServerSession) {
-        val username = webSocket.call.sessions.get<SessionToken>()?.username ?: return
-//        val username = "alex"
+//        val username = webSocket.call.sessions.get<SessionToken>()?.username ?: return
+        val username = "alex"
         connections[username] = webSocket
         try {
             loop@ for (frame in webSocket.incoming) {
@@ -75,7 +75,7 @@ object FramesHandler {
         try {
             val obj = JSONParser().parse(message) as JSONObject
             val method = obj["request"] as String
-            val param = obj["parameters"] as Map<String, String>
+            val param = obj["parameters"] as JSONObject
             val request = Request(method, param)
             when (request.method) {
                 RequestedResourceType.REQ_GAME_PLAYER.resource,

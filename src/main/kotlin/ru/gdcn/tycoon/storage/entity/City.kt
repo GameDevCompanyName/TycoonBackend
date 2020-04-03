@@ -19,11 +19,11 @@ class City {
 
     @Column(nullable = false)
     @Range(min = 0, max = 16_777_215)
-    var color: Int = -1
+    var color: Long = -1
 
     @Column(nullable = false)
     @Range(min = 0)
-    var population: Int = 0
+    var population: Long = 0
 
     @Column(name = "polygon_data", nullable = false, length = 1000)
     lateinit var polygonData: String
@@ -33,6 +33,9 @@ class City {
 
     @Transient
     var neighbors: MutableSet<Long> = mutableSetOf()
+
+    @Transient
+    var resources: MutableSet<CityResource> = mutableSetOf()
 
     @JsonIgnore
     fun toJSONObject(fields: Array<String>): JSONObject {
@@ -51,6 +54,19 @@ class City {
             val b = JSONArray()
             b.addAll(neighbors)
             obj[FIELD_NEIGHBORS] = b
+
+            val c = JSONArray()
+            c.addAll(
+                resources.map {
+                    val tmpObj = JSONObject()
+                    tmpObj["id"] = it.compositeId.resourceId
+                    tmpObj["name"] = it.name
+                    tmpObj["cost"] = it.cost
+                    tmpObj["quantity"] = it.quantity
+                    tmpObj
+                }
+            )
+            obj[FIELD_RESOURCES] = c
 
             obj[FIELD_POLYGON_DATA] = JSONParser().parse(polygonData) as JSONObject
 
@@ -82,6 +98,20 @@ class City {
             a.addAll(neighbors)
             obj[FIELD_NEIGHBORS] = a
         }
+        if (fields.contains(FIELD_RESOURCES)) {
+            val a = JSONArray()
+            a.addAll(
+                resources.map {
+                    val tmpObj = JSONObject()
+                    tmpObj["id"] = it.compositeId.resourceId
+                    tmpObj["name"] = it.name
+                    tmpObj["cost"] = it.cost
+                    tmpObj["quantity"] = it.quantity
+                    tmpObj
+                }
+            )
+            obj[FIELD_RESOURCES] = a
+        }
 
         return obj
     }
@@ -94,7 +124,16 @@ class City {
         const val FIELD_POLYGON_DATA = "polygonData"
         const val FIELD_PLAYERS = "players"
         const val FIELD_NEIGHBORS = "neighbors"
+        const val FIELD_RESOURCES = "resources"
         const val FIELD_ALL = "*"
-        val FIELD_WITHOUT_GRAPHICS = arrayOf(FIELD_ID, FIELD_NAME, FIELD_POPULATION, FIELD_PLAYERS, FIELD_NEIGHBORS)
+
+        val FIELD_ALL_WITHOUT_GRAPHICS = arrayOf(
+            FIELD_ID,
+            FIELD_NAME,
+            FIELD_POPULATION,
+            FIELD_PLAYERS,
+            FIELD_NEIGHBORS,
+            FIELD_RESOURCES
+        )
     }
 }

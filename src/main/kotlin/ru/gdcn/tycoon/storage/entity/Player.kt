@@ -3,9 +3,11 @@ package ru.gdcn.tycoon.storage.entity
 import com.fasterxml.jackson.annotation.JsonIgnore
 
 import org.hibernate.validator.constraints.Range
+import org.json.simple.JSONArray
 import org.json.simple.JSONObject
 
 import javax.persistence.*
+import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "t_player")
@@ -29,6 +31,9 @@ class Player() {
     @JoinColumn(name = "user_id")
     var userId: Long = -1
 
+    @Transient
+    var resources: MutableSet<PlayerResource> = mutableSetOf()
+
     constructor(name: String, money: Long, cityId: Long, userId: Long) : this() {
         this.name = name
         this.money = money
@@ -46,6 +51,18 @@ class Player() {
             obj[FIELD_MONEY] = money
             obj[FIELD_CITY_ID] = cityId
             obj[FIELD_USER_ID] = userId
+
+            val a = JSONArray()
+            a.addAll(
+                resources.map {
+                    val tmpObj = JSONObject()
+                    tmpObj["id"] = it.compositeId.resourceId
+                    tmpObj["name"] = it.name
+                    tmpObj["quantity"] = it.quantity
+                    tmpObj
+                }
+            )
+            obj[FIELD_RESOURCES] = a
 
             return obj
         }
@@ -65,6 +82,19 @@ class Player() {
         if (fields.contains(FIELD_USER_ID)) {
             obj[FIELD_USER_ID] = userId
         }
+        if (fields.contains(FIELD_RESOURCES)) {
+            val a = JSONArray()
+            a.addAll(
+                resources.map {
+                    val tmpObj = JSONObject()
+                    tmpObj["id"] = it.compositeId.resourceId
+                    tmpObj["name"] = it.name
+                    tmpObj["quantity"] = it.quantity
+                    tmpObj
+                }
+            )
+            obj[FIELD_RESOURCES] = a
+        }
 
         return obj
     }
@@ -75,6 +105,7 @@ class Player() {
         const val FIELD_MONEY = "money"
         const val FIELD_CITY_ID = "cityId"
         const val FIELD_USER_ID = "userId"
+        const val FIELD_RESOURCES = "resources"
         const val FIELD_ALL = "*"
     }
 }

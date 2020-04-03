@@ -17,4 +17,7 @@ class PlayerResource {
     @Range(min = 0)
     @Column(nullable = false)
     var quantity: Long = -1
+
+    @Transient
+    var name: String = "unknown"
 }

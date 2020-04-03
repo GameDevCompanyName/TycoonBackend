@@ -29,15 +29,17 @@ object MainRequests {
                 if (player.isEmpty) {
                     Response(
                         ResponseStatus.ERROR.code,
-                        ResponseType.PLAYER.type,
+                        request.method,
                         ResponseCauseText.FAILED_GET_INFO.text
                     ).toJSONString()
                 } else {
                     val jsonObject = player.get().toJSONObject(arrayOf(Player.FIELD_ALL))
+                    val tmpObj = JSONObject()
+                    tmpObj["player"] = jsonObject
                     Response(
                         ResponseStatus.OK.code,
-                        ResponseType.PLAYER.type,
-                        jsonObject
+                        request.method,
+                        tmpObj
                     ).toJSONString()
                 }
             }
@@ -46,15 +48,17 @@ object MainRequests {
                 if (city.isEmpty) {
                     Response(
                         ResponseStatus.ERROR.code,
-                        ResponseType.CITY.type,
+                        request.method,
                         ResponseCauseText.FAILED_GET_INFO.text
                     ).toJSONString()
                 } else {
-                    val jsonObject = city.get().toJSONObject(City.FIELD_WITHOUT_GRAPHICS)
+                    val jsonObject = city.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
+                    val tmpObj = JSONObject()
+                    tmpObj["city"] = jsonObject
                     Response(
                         ResponseStatus.OK.code,
-                        ResponseType.CITY.type,
-                        jsonObject
+                        request.method,
+                        tmpObj
                     ).toJSONString()
                 }
             }
@@ -70,44 +74,44 @@ object MainRequests {
                 if (cityInfo.isEmpty || player.isEmpty || worldMap == null) {
                     Response(
                         ResponseStatus.ERROR.code,
-                        ResponseType.WORLD.type,
+                        request.method,
                         ResponseCauseText.FAILED_GET_INFO.text
                     ).toJSONString()
                 } else {
 
                     val obj = JSONObject()
-                    obj["city"] = cityInfo.get().toJSONObject(City.FIELD_WITHOUT_GRAPHICS)
+                    obj["city"] = cityInfo.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
                     obj["player"] = player.get().toJSONObject(arrayOf(Player.FIELD_ALL))
                     obj["world"] = worldMap
 
                     Response(
                         ResponseStatus.OK.code,
-                        ResponseType.WORLD.type,
+                        request.method,
                         obj
                     ).toJSONString()
                 }
             }
             RequestedResourceType.REQ_MOVE_TO_OTHER_CITY.resource -> {
                 val toCityId = request.parameters["cityId"]
-                if (toCityId == null) {
+                if (toCityId == null || toCityId !is Long) {
                     Response(
                         ResponseStatus.ERROR.code,
-                        ResponseType.MOVE.type,
+                        request.method,
                         ResponseCauseText.FAILED_MOVE.text
                     ).toJSONString()
                 } else {
                     val player = getPlayer(username)
                     var currentCityInfo = getCity(username)
-                    val newCityInfo = getCityById(toCityId.toLong())
+                    var newCityInfo = getCityById(toCityId)
 
                     if (player.isEmpty || currentCityInfo.isEmpty || newCityInfo.isEmpty) {
                         Response(
                             ResponseStatus.ERROR.code,
-                            ResponseType.MOVE.type,
+                            request.method,
                             ResponseCauseText.FAILED_MOVE.text
                         ).toJSONString()
                     } else {
-                        player.get().cityId = toCityId.toLong()
+                        player.get().cityId = toCityId
                         val result = StorageHelper.transaction {
                             StorageHelper.playerRepository.update(it, player.get())
                             TransactionResult(isRollback = false, data = true)
@@ -118,22 +122,41 @@ object MainRequests {
                             if (currentCityInfo.isEmpty) {
                                 Response(
                                     ResponseStatus.ERROR.code,
-                                    ResponseType.MOVE.type,
+                                    request.method,
                                     ResponseCauseText.FAILED_MOVE.text
                                 ).toJSONString()
                             } else {
+                                val oo = JSONObject()
+                                oo["city"] = currentCityInfo.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
                                 val response = Response(
                                     ResponseStatus.OK.code,
-                                    ResponseType.MOVE.type,
-                                    currentCityInfo.get().toJSONObject(City.FIELD_WITHOUT_GRAPHICS)
+                                    request.method,
+                                    oo
                                 ).toJSONString()
                                 actionListener.onSendAll(username, response)
-                                response
+
+                                newCityInfo = getCityById(toCityId)
+                                if (newCityInfo.isEmpty) {
+                                    Response(
+                                        ResponseStatus.ERROR.code,
+                                        request.method,
+                                        ResponseCauseText.FAILED_MOVE.text
+                                    ).toJSONString()
+                                } else {
+                                    val o = JSONObject()
+                                    o["city"] = newCityInfo.get().toJSONObject(City.FIELD_ALL_WITHOUT_GRAPHICS)
+
+                                    Response(
+                                        ResponseStatus.OK.code,
+                                        request.method,
+                                        o
+                                    ).toJSONString()
+                                }
                             }
                         } else {
                             Response(
                                 ResponseStatus.ERROR.code,
-                                ResponseType.MOVE.type,
+                                request.method,
                                 ResponseCauseText.FAILED_MOVE.text
                             ).toJSONString()
                         }
@@ -165,7 +188,9 @@ object MainRequests {
         } else {
             val a = JSONArray()
             a.addAll(
-                city.get().map { it.toJSONObject(arrayOf(City.FIELD_ALL)) }
+                city.get().map {
+                    it.toJSONObject(arrayOf(City.FIELD_ID, City.FIELD_COLOR, City.FIELD_POLYGON_DATA))
+                }
             )
             Optional.of(a)
         }
@@ -199,6 +224,17 @@ object MainRequests {
                 }
             }.toMutableSet()
 
+            val cityResource = StorageHelper.cityResourceRepository.findByCityId(session, city.id)
+                ?: return@transaction TransactionResult<City>(true, null)
+
+            cityResource.forEach {
+                val res = StorageHelper.resourceRepository.findById(session, it.compositeId.resourceId)
+                    ?: return@transaction TransactionResult<City>(true, null)
+                it.name = res.name
+            }
+
+            city.resources = cityResource.toMutableSet()
+
             return@transaction TransactionResult(false, city)
         }
 
@@ -216,11 +252,20 @@ object MainRequests {
                 return@transaction TransactionResult<Player>(true, null)
             } else {
                 val player = StorageHelper.playerRepository.findByUserId(session, user.id)
-                return@transaction if (player == null) {
-                    TransactionResult<Player>(true, null)
-                } else {
-                    TransactionResult(false, player)
+                    ?: return@transaction TransactionResult<Player>(true, null)
+
+                val playerResource = StorageHelper.playerResourceRepository.findByPlayerId(session, player.id)
+                    ?: return@transaction TransactionResult<Player>(true, null)
+
+                playerResource.forEach {
+                    val res = StorageHelper.resourceRepository.findById(session, it.compositeId.resourceId)
+                        ?: return@transaction TransactionResult<Player>(true, null)
+                    it.name = res.name
                 }
+
+                player.resources = playerResource.toMutableSet()
+
+                return@transaction TransactionResult(false, player)
             }
         }
     }
