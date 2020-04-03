@@ -24,7 +24,7 @@ object FramesHandler {
     interface RequestExecutorListener {
         suspend fun onSendResponse(sender: String, jsonMessage: String)
         suspend fun onDisconnect(username: String, webSocket: DefaultWebSocketServerSession)
-        suspend fun onSendAll(username: String, message: String)
+        suspend fun onSendAll(sender: String, jsonMessage: String)
     }
 
     private val executorListener = object : RequestExecutorListener {
@@ -33,8 +33,12 @@ object FramesHandler {
             webSocket.outgoing.send(Frame.Text(jsonMessage))
         }
 
-        override suspend fun onSendAll(username: String, message: String) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        override suspend fun onSendAll(sender: String, jsonMessage: String) {
+            connections.forEach {
+                if (it.key != sender) {
+                    it.value.outgoing.send(Frame.Text(jsonMessage))
+                }
+            }
         }
 
         override suspend fun onDisconnect(username: String, webSocket: DefaultWebSocketServerSession) {
@@ -69,9 +73,8 @@ object FramesHandler {
 
     private suspend fun executeRequestByClient(username: String, message: String) {
         try {
-//            val request = ObjectMapper().reader().readValue<Request>(message)
             val obj = JSONParser().parse(message) as JSONObject
-            val method = obj["method"] as String
+            val method = obj["request"] as String
             val param = obj["parameters"] as Map<String, String>
             val request = Request(method, param)
             when (request.method) {

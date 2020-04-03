@@ -88,7 +88,9 @@ object MainRequests {
                             if (currentCityInfo.isEmpty) {
                                 Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
                             } else {
-                                Response(ResponseStatus.OK.code, currentCityInfo.get()).toJSONString()
+                                val r = Response(ResponseStatus.OK.code, currentCityInfo.get()).toJSONString()
+                                actionListener.onSendAll(username, r)
+                                r
                             }
                         } else {
                             Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_MOVE.text).toJSONString()
