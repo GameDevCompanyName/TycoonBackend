@@ -5,7 +5,7 @@ import java.io.Serializable
 import javax.persistence.*
 
 @Embeddable
-class CompositeKeyRoad : Serializable{
+class CompositeKeyRoad() : Serializable{
     @Range(min = 0)
     @Column(name = "from_city_id", nullable = false)
     @JoinColumn(name = "city_id")
@@ -16,7 +16,7 @@ class CompositeKeyRoad : Serializable{
     @JoinColumn(name = "city_id")
     var toCityId: Long = -1
 
-    constructor(fromCityId: Long, toCityId: Long) {
+    constructor(fromCityId: Long, toCityId: Long) : this() {
         this.fromCityId = fromCityId
         this.toCityId = toCityId
     }

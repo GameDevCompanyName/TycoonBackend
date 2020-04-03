@@ -12,10 +12,11 @@ class RoadRepositoryImpl : BaseDataRepository<Road>("Road"), IRoadRepository {
         val resultByTo = findByColumnName(session, "to_city_id", cityId.toString())
         return when {
             resultByFrom != null -> {
+                val result = resultByFrom.toMutableList()
                 if (resultByTo != null) {
-                    resultByFrom.toMutableList().addAll(resultByTo)
+                    result.addAll(resultByTo)
                 }
-                resultByFrom
+                result
             }
             resultByTo != null -> resultByTo
             else -> null

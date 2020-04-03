@@ -2,7 +2,7 @@ package ru.gdcn.tycoon.api.conf
 
 import com.fasterxml.jackson.databind.ObjectMapper
 
-class Response<T>(val status: Int, val data: T) {
+class Response<T>(val status: Int, val type: String, val data: T) {
     fun toJSONString(): String = ObjectMapper().writer().writeValueAsString(this)
 }
 class Request(val method: String, val parameters: Map<String, String>)
@@ -19,4 +19,11 @@ enum class ResponseCauseText(val text: String) {
     FAILED_GET_INFO("Failed to get information!"),
     FAILED_MOVE("Failed move to other city!"),
     UNKNOWN_REQUEST("Unknown request!")
+}
+
+enum class ResponseType(val type: String) {
+    WORLD("world"),
+    PLAYER("player"),
+    CITY("city"),
+    MOVE("move")
 }

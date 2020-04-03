@@ -7,7 +7,7 @@ import javax.persistence.Embeddable
 import javax.persistence.JoinColumn
 
 @Embeddable
-class CompositeKeyCityResource : Serializable{
+class CompositeKeyCityResource() : Serializable{
 
     @Range(min = 0)
     @Column(name = "city_id", nullable = false)
@@ -19,7 +19,7 @@ class CompositeKeyCityResource : Serializable{
     @JoinColumn(name = "resource_id")
     var resourceId: Long = -1
 
-    constructor(cityId: Long, resourceId: Long) {
+    constructor(cityId: Long, resourceId: Long) : this() {
         this.cityId = cityId
         this.resourceId = resourceId
     }

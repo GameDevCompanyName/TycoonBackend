@@ -1,7 +1,10 @@
 package ru.gdcn.tycoon.storage.entity
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 import org.hibernate.validator.constraints.Range
+import org.json.simple.JSONObject
+
 import javax.persistence.*
 
 @Entity
@@ -33,5 +36,45 @@ class Player() {
         this.cityId = cityId
     }
 
-    fun toJSONString(): String = ObjectMapper().writer().writeValueAsString(this)
+    @JsonIgnore
+    fun toJSONObject(fields: Array<String>): JSONObject {
+        val obj = JSONObject()
+
+        if (fields.contains(FIELD_ALL)) {
+            obj[FIELD_ID] = id
+            obj[FIELD_NAME] = name
+            obj[FIELD_MONEY] = money
+            obj[FIELD_CITY_ID] = cityId
+            obj[FIELD_USER_ID] = userId
+
+            return obj
+        }
+
+        if (fields.contains(FIELD_ID)) {
+            obj[FIELD_ID] = id
+        }
+        if (fields.contains(FIELD_NAME)) {
+            obj[FIELD_NAME] = name
+        }
+        if (fields.contains(FIELD_MONEY)) {
+            obj[FIELD_MONEY] = money
+        }
+        if (fields.contains(FIELD_CITY_ID)) {
+            obj[FIELD_CITY_ID] = cityId
+        }
+        if (fields.contains(FIELD_USER_ID)) {
+            obj[FIELD_USER_ID] = userId
+        }
+
+        return obj
+    }
+
+    companion object {
+        const val FIELD_ID = "id"
+        const val FIELD_NAME = "name"
+        const val FIELD_MONEY = "money"
+        const val FIELD_CITY_ID = "cityId"
+        const val FIELD_USER_ID = "userId"
+        const val FIELD_ALL = "*"
+    }
 }

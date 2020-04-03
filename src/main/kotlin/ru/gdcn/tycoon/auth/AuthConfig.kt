@@ -56,6 +56,7 @@ fun Application.installAuth() {
                 call.respond(
                     Response(
                         ResponseStatus.ERROR.code,
+                        "error",
                         "Invalid username or password!"
                     )
                 )
@@ -97,6 +98,7 @@ private fun initAuthenticateRoute(routing: Routing) {
                 call.respond(
                     Response(
                         ResponseStatus.ERROR.code,
+                        "error",
                         "Failed login!"
                     )
                 )
@@ -104,7 +106,7 @@ private fun initAuthenticateRoute(routing: Routing) {
             }
 
             call.sessions.set(TOKEN_NAME, SessionToken(principal.name))
-            call.respond(Response(ResponseStatus.OK.code, "User logged"))
+            call.respond(Response(ResponseStatus.OK.code, "error","User logged"))
 
             logger.info("\'${principal.name}\' logged")
         }
@@ -124,6 +126,7 @@ private fun initRegistrationRoute(routing: Routing) {
             call.respond(
                 Response(
                     ResponseStatus.ERROR.code,
+                    "error",
                     "Can't receive parameters!"
                 )
             )
@@ -137,6 +140,7 @@ private fun initRegistrationRoute(routing: Routing) {
             call.respond(
                 Response(
                     ResponseStatus.ERROR.code,
+                    "error",
                     "Incorrect key for parameters username or password or passwordConfirm!"
                 )
             )
@@ -147,6 +151,7 @@ private fun initRegistrationRoute(routing: Routing) {
             call.respond(
                 Response(
                     ResponseStatus.ERROR.code,
+                    "error",
                     "Passwords not equals!"
                 )
             )
@@ -168,7 +173,7 @@ private fun createNewUser(username: String, password: String): Response<String> 
         if (userFromDB != null) {
             return@transaction TransactionResult(
                 true,
-                Response(ResponseStatus.ERROR.code, "User already exists!")
+                Response(ResponseStatus.ERROR.code, "error","User already exists!")
             )
         }
 
@@ -176,7 +181,7 @@ private fun createNewUser(username: String, password: String): Response<String> 
         if (pair.isEmpty) {
             return@transaction TransactionResult(
                 true,
-                Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+                Response(ResponseStatus.ERROR.code, "error","Failed to create a user!")
             )
         }
 
@@ -192,7 +197,7 @@ private fun createNewUser(username: String, password: String): Response<String> 
             logger.error("\'${newUser.username}\' - failed to create. Cause: ¯\\_(ツ)_/¯")
             return@transaction TransactionResult(
                 true,
-                Response(ResponseStatus.ERROR.code, "Failed to create a user!")
+                Response(ResponseStatus.ERROR.code, "error","Failed to create a user!")
             )
         }
 
@@ -200,18 +205,18 @@ private fun createNewUser(username: String, password: String): Response<String> 
             logger.error("Failed to create a character. \'${newUser.username}\' is not created!")
             return@transaction TransactionResult(
                 true,
-                Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_CREATE_USER.text)
+                Response(ResponseStatus.ERROR.code, "error",ResponseCauseText.FAILED_CREATE_USER.text)
             )
         }
 
         return@transaction TransactionResult(
             false,
-            Response(ResponseStatus.OK.code, ResponseCauseText.REGISTERED.text)
+            Response(ResponseStatus.OK.code, "error",ResponseCauseText.REGISTERED.text)
         )
     }
 
     return if (result.isEmpty) {
-        Response(ResponseStatus.ERROR.code, ResponseCauseText.FAILED_CREATE_USER.text)
+        Response(ResponseStatus.ERROR.code, "error", ResponseCauseText.FAILED_CREATE_USER.text)
     } else {
         result.get()
     }
