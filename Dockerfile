@@ -20,4 +20,4 @@ USER $APPLICATION_USER
 COPY --from=build /src/build/libs/TycoonBackend.jar /app/TycoonBackend.jar
 WORKDIR /app
 
-CMD ["java", "-server", "-XX:+UseContainerSupport", "-XX:InitialRAMFraction=2", "-XX:MinRAMFraction=2", "-XX:MaxRAMFraction=2", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", "-XX:+UseStringDeduplication", "-jar", "TycoonBackend-0.0.1.jar"]
+CMD ["java", "-server", "-XX:+UseContainerSupport", "-XX:InitialRAMFraction=2", "-XX:MinRAMFraction=2", "-XX:MaxRAMFraction=2", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", "-XX:+UseStringDeduplication", "-jar", "TycoonBackend.jar"]
