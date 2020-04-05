@@ -1,6 +1,7 @@
 package ru.gdcn.tycoon.storage.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import org.hibernate.Session
 import org.hibernate.validator.constraints.Range
 import org.json.simple.JSONArray
 import org.json.simple.JSONObject
@@ -29,7 +30,7 @@ class City {
     lateinit var polygonData: String
 
     @Transient
-    var players: MutableSet<String> = mutableSetOf()
+    var players: MutableSet<Player> = mutableSetOf()
 
     @Transient
     var neighbors: MutableSet<Long> = mutableSetOf()
@@ -41,38 +42,6 @@ class City {
     fun toJSONObject(fields: Array<String>): JSONObject {
         val obj = JSONObject()
 
-        if (fields.contains(FIELD_ALL)) {
-            obj[FIELD_ID] = id
-            obj[FIELD_NAME] = name
-            obj[FIELD_COLOR] = color
-            obj[FIELD_POPULATION] = population
-
-            val a = JSONArray()
-            a.addAll(players)
-            obj[FIELD_PLAYERS] = a
-
-            val b = JSONArray()
-            b.addAll(neighbors)
-            obj[FIELD_NEIGHBORS] = b
-
-            val c = JSONArray()
-            c.addAll(
-                resources.map {
-                    val tmpObj = JSONObject()
-                    tmpObj["id"] = it.compositeId.resourceId
-                    tmpObj["name"] = it.name
-                    tmpObj["cost"] = it.cost
-                    tmpObj["quantity"] = it.quantity
-                    tmpObj
-                }
-            )
-            obj[FIELD_RESOURCES] = c
-
-            obj[FIELD_POLYGON_DATA] = JSONParser().parse(polygonData) as JSONObject
-
-            return obj
-        }
-
         if (fields.contains(FIELD_ID)) {
             obj[FIELD_ID] = id
         }
@@ -80,7 +49,7 @@ class City {
             obj[FIELD_NAME] = name
         }
         if (fields.contains(FIELD_COLOR)) {
-            obj[FIELD_COLOR] = name
+            obj[FIELD_COLOR] = color
         }
         if (fields.contains(FIELD_POPULATION)) {
             obj[FIELD_POPULATION] = population
@@ -90,7 +59,9 @@ class City {
         }
         if (fields.contains(FIELD_PLAYERS)) {
             val a = JSONArray()
-            a.addAll(players)
+            a.addAll(players.map {
+                it.toJSONObject(Player.FIELD_ALL)
+            })
             obj[FIELD_PLAYERS] = a
         }
         if (fields.contains(FIELD_NEIGHBORS)) {
@@ -125,12 +96,12 @@ class City {
         const val FIELD_PLAYERS = "players"
         const val FIELD_NEIGHBORS = "neighbors"
         const val FIELD_RESOURCES = "resources"
-        const val FIELD_ALL = "*"
-
-        val FIELD_ALL_WITHOUT_GRAPHICS = arrayOf(
+        val FIELD_ALL = arrayOf(
             FIELD_ID,
             FIELD_NAME,
+            FIELD_COLOR,
             FIELD_POPULATION,
+            FIELD_POLYGON_DATA,
             FIELD_PLAYERS,
             FIELD_NEIGHBORS,
             FIELD_RESOURCES

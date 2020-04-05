@@ -8,7 +8,7 @@ import javax.persistence.Table
 
 @Entity
 @Table(name = "t_player_resource")
-class PlayerResource {
+class PlayerResource() {
 
     @EmbeddedId
     @Column(nullable = false)
@@ -20,4 +20,9 @@ class PlayerResource {
 
     @Transient
     var name: String = "unknown"
+
+    constructor(resourceId: Long, playerId: Long, quantity: Long) : this() {
+        this.compositeId = CompositeKeyPlayerResource(playerId, resourceId)
+        this.quantity = quantity
+    }
 }

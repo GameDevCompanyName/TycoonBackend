@@ -45,28 +45,6 @@ class Player() {
     fun toJSONObject(fields: Array<String>): JSONObject {
         val obj = JSONObject()
 
-        if (fields.contains(FIELD_ALL)) {
-            obj[FIELD_ID] = id
-            obj[FIELD_NAME] = name
-            obj[FIELD_MONEY] = money
-            obj[FIELD_CITY_ID] = cityId
-            obj[FIELD_USER_ID] = userId
-
-            val a = JSONArray()
-            a.addAll(
-                resources.map {
-                    val tmpObj = JSONObject()
-                    tmpObj["id"] = it.compositeId.resourceId
-                    tmpObj["name"] = it.name
-                    tmpObj["quantity"] = it.quantity
-                    tmpObj
-                }
-            )
-            obj[FIELD_RESOURCES] = a
-
-            return obj
-        }
-
         if (fields.contains(FIELD_ID)) {
             obj[FIELD_ID] = id
         }
@@ -106,6 +84,13 @@ class Player() {
         const val FIELD_CITY_ID = "cityId"
         const val FIELD_USER_ID = "userId"
         const val FIELD_RESOURCES = "resources"
-        const val FIELD_ALL = "*"
+        val FIELD_ALL = arrayOf(
+            FIELD_ID,
+            FIELD_NAME,
+            FIELD_MONEY,
+            FIELD_CITY_ID,
+            FIELD_USER_ID,
+            FIELD_RESOURCES
+        )
     }
 }

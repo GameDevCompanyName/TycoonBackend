@@ -16,9 +16,9 @@ fun Application.installWebSocket() {
 }
 
 fun Routing.routeWebSocket() {
-//    authenticate(AUTH_FORM_NAME) {
+    authenticate(AUTH_FORM_NAME) {
         webSocket("/game") {
             FramesHandler.handle(this)
-//        }
+        }
     }
 }

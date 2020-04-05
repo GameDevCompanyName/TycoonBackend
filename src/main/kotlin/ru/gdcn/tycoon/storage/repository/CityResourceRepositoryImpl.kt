@@ -16,4 +16,6 @@ class CityResourceRepositoryImpl : BaseDataRepository<CityResource>("CityResourc
 
     override fun save(session: Session, cityResource: CityResource): CompositeKeyCityResource?
             = saveEntity(session, cityResource) as CompositeKeyCityResource?
+
+    override fun update(session: Session, cityResource: CityResource) = updateEntity(session, cityResource)
 }
