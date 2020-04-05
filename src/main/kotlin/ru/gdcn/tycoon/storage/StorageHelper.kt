@@ -60,7 +60,7 @@ object StorageHelper {
         RoadRepositoryImpl()
     }
 
-    fun <R> transaction(f:(Session) -> TransactionResult<R>): Optional<R> {
+    fun <R> transaction(f: (Session) -> TransactionResult<R>): Optional<R> {
         return try {
             sessionFactory.openSession().use {
                 try {

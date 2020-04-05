@@ -16,4 +16,6 @@ class PlayerResourceRepositoryImpl :
 
     override fun findByPlayerId(session: Session, playerId: Long): List<PlayerResource>?
             = findByColumnName(session,"player_id", playerId.toString())
+
+    override fun saveOrUpdate(session: Session, playerResource: PlayerResource) = saveOrUpdateEntity(session, playerResource)
 }

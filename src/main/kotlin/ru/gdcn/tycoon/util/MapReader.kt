@@ -21,8 +21,8 @@ object MapReader {
                 val city = City()
                 city.id = cityObj["id"] as Long
                 city.name = cityObj["name"] as String
-                city.color = (cityObj["color"] as Long).toInt()
-                city.population = (cityObj["population"] as Long).toInt()
+                city.color = cityObj["color"] as Long
+                city.population = cityObj["population"] as Long
                 city.polygonData = cityObj["polygonData"] as String
                 StorageHelper.transaction<Nothing> { session ->
                     val id = StorageHelper.cityRepository.save(session, city)

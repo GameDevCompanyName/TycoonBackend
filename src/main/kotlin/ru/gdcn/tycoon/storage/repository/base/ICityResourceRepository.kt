@@ -9,4 +9,5 @@ interface ICityResourceRepository {
     fun findByCompositeId(session: Session, id: CompositeKeyCityResource): CityResource?
     fun findByCityId(session: Session, cityId: Long): List<CityResource>?
     fun save(session: Session, cityResource: CityResource): CompositeKeyCityResource?
+    fun update(session: Session, cityResource: CityResource)
 }

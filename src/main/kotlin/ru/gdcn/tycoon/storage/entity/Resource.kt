@@ -7,7 +7,6 @@ import javax.persistence.*
 class Resource {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     var id: Long = -1
 
     @Column(unique = true, nullable = false)

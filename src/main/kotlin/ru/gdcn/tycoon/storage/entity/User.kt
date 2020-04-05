@@ -27,9 +27,6 @@ class User() {
     @Column(nullable = false)
     lateinit var registered: Timestamp
 
-    @Transient
-    lateinit var passwordConfirm: String
-
     constructor(username: String, password: ByteArray, salt: ByteArray, role: Int, registeredTimestamp: Timestamp) : this() {
         this.username = username
         this.password = password
