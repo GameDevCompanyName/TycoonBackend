@@ -43,7 +43,7 @@ private val logger: Logger by lazy { LoggerFactory.getLogger("AuthLogger") }
 
 fun Application.installSession() {
     install(Sessions) {
-        cookie<SessionToken>(TOKEN_NAME, directorySessionStorage(File("/sessionstor.txt"), false))
+        cookie<SessionToken>(TOKEN_NAME, SessionStorageMemory())
     }
 }
 

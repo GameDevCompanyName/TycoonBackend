@@ -1,0 +1,9 @@
+{
+    "db.username" : "admin"
+    "db.password" : "1488280",
+
+    "server.host" : "0.0.0.0",
+    "server.port" : "8080",
+    "server.hashing_pass.iteration_count" : "65536"
+    "server.hashing_pass.key_length" : "256"
+}

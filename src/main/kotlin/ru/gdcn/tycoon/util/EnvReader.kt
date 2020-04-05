@@ -7,7 +7,7 @@ import java.io.FileReader
 
 object EnvReader {
 
-    private const val ENV_FILE_NAME = "environment"
+    private const val ENV_FILE_NAME = "/environment.txt"
 
     const val KEY_DB_USERNAME = "db.username"
     const val KEY_DB_PASSWORD = "db.password"
@@ -22,7 +22,7 @@ object EnvReader {
         val parser = JSONParser()
         val result = mutableMapOf<String, String>()
         try {
-            val obj = parser.parse(FileReader(javaClass.classLoader.getResource(ENV_FILE_NAME).file)) as JSONObject
+            val obj = parser.parse(javaClass.getResourceAsStream(ENV_FILE_NAME).bufferedReader()) as JSONObject
             result[KEY_DB_USERNAME] = obj[KEY_DB_USERNAME] as String
             result[KEY_DB_PASSWORD] = obj[KEY_DB_PASSWORD] as String
             result[KEY_SERVER_HOST] = obj[KEY_SERVER_HOST] as String
