@@ -1,6 +1,7 @@
 /*
-!environment.txt
 
+!Dockerfile
+!environment.txt
 !/src
 !.gitignore
 !build.gradle
