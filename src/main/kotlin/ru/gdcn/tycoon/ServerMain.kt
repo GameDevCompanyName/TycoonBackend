@@ -18,7 +18,7 @@ import ru.gdcn.tycoon.util.MapReader
 
 fun main() {
 
-//    MapReader.readMap()
+    MapReader.readMap()
 
     val host = EnvReader.env[EnvReader.KEY_SERVER_HOST] ?: throw IllegalStateException("HOST not found!")
     val port = EnvReader.env[EnvReader.KEY_SERVER_PORT]?.toInt() ?: throw IllegalStateException("PORT not found!")

@@ -15,7 +15,7 @@ object MapReader {
     fun readMap() {
         try {
             val parser = JSONParser()
-            val obj = parser.parse(FileReader("world 1488.json")) as JSONObject
+            val obj = parser.parse(javaClass.getResourceAsStream("/world 1488.json").bufferedReader()) as JSONObject
             (obj["cities"] as JSONArray).map {
                 val cityObj = it as JSONObject
                 val city = City()
